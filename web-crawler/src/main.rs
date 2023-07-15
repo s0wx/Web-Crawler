@@ -11,6 +11,7 @@ async fn get_base_url(url: &Url, doc: &Document) -> Result<Url, ParseError> {
     base_tag_href.map_or_else(|| Url::parse(&url[..Position::BeforePath]), Url::parse)
 }
 
+
 async fn check_link(url: &Url) -> bool {
     let res = reqwest::get(url.as_ref()).await;
     let mut final_check = false;
@@ -26,6 +27,7 @@ async fn check_link(url: &Url) -> bool {
 
     final_check
 }
+
 
 async fn parse_url(url: &str) -> String {
     let url = Url::parse("https://www.rust-lang.org/en-US/");
@@ -54,6 +56,19 @@ async fn parse_url(url: &str) -> String {
     final_parsed
 }
 
+
+fn extract_links(doc: &Document, base_url: &Url) -> HashSet<Url> {
+    let base_parser = Url::options().base_url(Some(&base_url));
+    let links: HashSet<Url> = doc
+        .find(Name("a"))
+        .filter_map(|n| n.attr("href"))
+        .filter_map(|link| base_parser.parse(link).ok())
+        .collect();
+
+    links
+}
+
+
 #[tokio::main]
 async fn main() {
     let init_url = "https://www.rust-lang.org/en-US/";
@@ -70,11 +85,8 @@ async fn main() {
             match base_url {
                 Ok(base_url) => {
                     let base_parser = Url::options().base_url(Some(&base_url));
-                    let links: HashSet<Url> = document
-                        .find(Name("a"))
-                        .filter_map(|n| n.attr("href"))
-                        .filter_map(|link| base_parser.parse(link).ok())
-                        .collect();
+                    let links: HashSet<Url> = extract_links(&document, &base_url);
+
                     let mut tasks = vec![];
 
                     for link in links {
