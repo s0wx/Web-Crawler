@@ -1,10 +1,10 @@
-use std::env;
 use std::collections::HashSet;
 
 use reqwest::StatusCode;
 use select::document::Document;
 use select::predicate::Name;
 use url::{Url};
+use clap::{Parser, Subcommand};
 
 
 /// Check url for status code 404
@@ -103,26 +103,64 @@ async fn extract_links_from_url(url: &str) -> HashSet<Url> {
 }
 
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct Cli {
+    /// Sets target host
+    #[arg(short, long, value_name = "HOST")]
+    target: Option<String>,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+
+#[derive(Subcommand)]
+enum Commands {
+    /// URL link extraction and checking
+    Links {
+        /// lists links of target
+        #[arg(short, long)]
+        list: bool,
+
+        /// checks links of target
+        #[arg(short, long)]
+        check: bool,
+    }
+}
+
+
+async fn process_cli(cli: &Cli) {
+    // You can check the value provided by positional arguments, or option arguments
+    cli_command(cli).await;
+}
+
+
+async fn cli_command(cli: &Cli) {
+    match cli.target.as_ref() {
+        Some(url) => {
+            match cli.command {
+                Some(Commands::Links {list, check}) => {
+                    let links = extract_links_from_url(url.as_str()).await;
+
+                    if check {
+                        check_links(links).await;
+                    } else if list {
+                        for link in links {
+                            println!("{}", link);
+                        }
+                    }
+                },
+                None => {}
+            }
+        },
+        None => {}
+    }
+}
+
+
 #[tokio::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        let init_url = &args[1];
-        let mut check = false;
-
-        // TODO replace by parameter check
-        if args.len() > 2 {
-            check = true;
-        }
-
-        let links = extract_links_from_url(init_url).await;
-
-        if check {
-            check_links(links).await;
-        } else {
-            for link in links {
-                println!("{}", link);
-            }
-        }
-    }
+    let cli = Cli::parse();
+    process_cli(&cli).await;
 }
