@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 reqwest = "0.11.18"
 select = "0.6.0"
-tokio = {version = "1.29.1", features = ["full"]}
+tokio = {version = "1.29.1", features = ["macros", "io-util", "tokio-macros", "rt-multi-thread"]}
 url = "2.4.0"
