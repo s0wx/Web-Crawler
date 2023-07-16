@@ -15,13 +15,12 @@ async fn get_base_url(url: &Url, doc: &Document) -> Result<Url, ParseError> {
 }
 
 
+/// Check url for status code 404
 async fn check_link(url: &Url) -> bool {
-    let res = reqwest::get(url.as_ref()).await;
-
     // True if link works
     let final_check: bool;
 
-    match res {
+    match reqwest::get(url.as_ref()).await {
         Ok(response) => {
             final_check = response.status() != StatusCode::NOT_FOUND;
         },
@@ -34,7 +33,8 @@ async fn check_link(url: &Url) -> bool {
 }
 
 
-async fn parse_url_website(url: &str) -> String {
+/// Parse website by url as Document
+async fn parse_document(url: &str) -> Document {
     let mut final_parsed: String = String::from("");
 
     match Url::parse(url) {
@@ -52,15 +52,7 @@ async fn parse_url_website(url: &str) -> String {
         Err(_err) => {}
     }
 
-    final_parsed
-}
-
-
-async fn parse_document(url: &str) -> Document {
-    let res = parse_url_website(&String::from(url)).await;
-    let res = res.as_str();
-
-    Document::from(res)
+    Document::from(final_parsed.as_str())
 }
 
 
@@ -77,6 +69,7 @@ fn extract_links(doc: &Document, base_url: &Url) -> HashSet<Url> {
 
 async fn process_links(links: HashSet<Url>) {
     let mut tasks = vec![];
+
     for link in links {
         tasks.push(tokio::spawn(async move {
             if check_link(&link).await {
@@ -114,5 +107,4 @@ async fn main() {
         },
         Err(_parse_err) => {}
     }
-
 }
