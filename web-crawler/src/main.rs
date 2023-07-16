@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use url::{ParseError, Position, Url};
 
 
+/// Extract base url from base tag if exiting, else use provided path by Url
 async fn get_base_url(url: &Url, doc: &Document) -> Result<Url, ParseError> {
     let base_tag_href = doc
         .find(Name("base"))
@@ -56,6 +57,7 @@ async fn parse_document(url: &str) -> Document {
 }
 
 
+/// Extract all links which can be found at Url
 fn extract_links(doc: &Document, base_url: &Url) -> HashSet<Url> {
     let base_parser = Url::options().base_url(Some(&base_url));
     let links: HashSet<Url> = doc
@@ -67,7 +69,9 @@ fn extract_links(doc: &Document, base_url: &Url) -> HashSet<Url> {
     links
 }
 
-async fn process_links(links: HashSet<Url>) {
+
+/// Check if provided links work
+async fn check_links(links: HashSet<Url>) {
     let mut tasks = vec![];
 
     for link in links {
@@ -89,22 +93,33 @@ async fn process_links(links: HashSet<Url>) {
 }
 
 
-#[tokio::main]
-async fn main() {
-    let init_url = "https://www.rust-lang.org/en-US";
+/// Extract all links from Url string
+async fn extract_links_from_url(url: &str) -> HashSet<Url> {
+    let mut links: HashSet<Url> = Default::default();
 
-    match Url::parse(&init_url) {
+    // parse str to Url
+    match Url::parse(&url) {
         Ok(res_url) => {
-            let document = parse_document(init_url).await;
+            // read website as Document
+            let document = parse_document(url).await;
 
             match get_base_url(&res_url, &document).await {
                 Ok(base_url) => {
-                    let links: HashSet<Url> = extract_links(&document, &base_url);
-                    process_links(links).await;
+                    links = extract_links(&document, &base_url);
                 },
                 Err(_err) => {}
             }
         },
         Err(_parse_err) => {}
     }
+
+    links
+}
+
+
+#[tokio::main]
+async fn main() {
+    let init_url = "https://www.rust-lang.org/en-US";
+    let links = extract_links_from_url(init_url).await;
+    check_links(links).await;
 }
