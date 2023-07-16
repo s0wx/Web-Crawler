@@ -108,8 +108,21 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
         let init_url = &args[1];
+        let mut check = false;
+
+        // TODO replace by parameter check
+        if args.len() > 2 {
+            check = true;
+        }
 
         let links = extract_links_from_url(init_url).await;
-        check_links(links).await;
+
+        if check {
+            check_links(links).await;
+        } else {
+            for link in links {
+                println!("{}", link);
+            }
+        }
     }
 }
