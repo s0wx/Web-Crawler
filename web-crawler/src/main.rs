@@ -1,19 +1,10 @@
+use std::env;
+use std::collections::HashSet;
+
 use reqwest::StatusCode;
 use select::document::Document;
 use select::predicate::Name;
-use std::collections::HashSet;
-use url::{ParseError, Position, Url};
-
-
-/// Extract base url from base tag if exiting, else use provided path by Url
-async fn get_base_url(url: &Url, doc: &Document) -> Result<Url, ParseError> {
-    let base_tag_href = doc
-        .find(Name("base"))
-        .filter_map(|n| n.attr("href"))
-        .nth(0);
-
-    base_tag_href.map_or_else(|| Url::parse(&url[..Position::BeforePath]), Url::parse)
-}
+use url::{Url};
 
 
 /// Check url for status code 404
@@ -103,12 +94,7 @@ async fn extract_links_from_url(url: &str) -> HashSet<Url> {
             // read website as Document
             let document = parse_document(url).await;
 
-            match get_base_url(&res_url, &document).await {
-                Ok(base_url) => {
-                    links = extract_links(&document, &base_url);
-                },
-                Err(_err) => {}
-            }
+            links = extract_links(&document, &res_url);
         },
         Err(_parse_err) => {}
     }
@@ -119,7 +105,11 @@ async fn extract_links_from_url(url: &str) -> HashSet<Url> {
 
 #[tokio::main]
 async fn main() {
-    let init_url = "https://www.rust-lang.org/en-US";
-    let links = extract_links_from_url(init_url).await;
-    check_links(links).await;
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        let init_url = &args[1];
+
+        let links = extract_links_from_url(init_url).await;
+        check_links(links).await;
+    }
 }
