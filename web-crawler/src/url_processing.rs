@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use reqwest::StatusCode;
 use url::Url;
 
@@ -41,4 +41,21 @@ pub async fn check_urls(urls: HashSet<Url>) {
             Err(_join_err) => {}
         }
     }
+}
+
+
+pub fn get_query_params(url: &Url) -> HashMap<&str, &str> {
+    let mut query_full: HashMap<&str, &str> = Default::default();
+
+    match url.query() {
+        Some(values) => {
+            query_full = values.split("&")
+                .map(|s| s.split_at(s.find("=").unwrap()))
+                .map(|(key, val)| (key, &val[1..]))
+                .collect();
+        },
+        None => {}
+    }
+
+    query_full
 }

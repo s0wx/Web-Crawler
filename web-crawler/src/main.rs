@@ -2,7 +2,7 @@ use std::string::String;
 
 use crate::cli::{get_parser};
 use crate::content::extract_links_from_url;
-use crate::url_processing::check_urls;
+use crate::url_processing::{check_urls, get_query_params};
 
 mod cli;
 mod content;
@@ -18,6 +18,7 @@ async fn process_cli_command_links(url: &String, list: &bool, check: &bool) {
     } else if *list {
         for link in links {
             println!("{}", link);
+            println!("{:?}", get_query_params(&link));
         }
     }
 }
