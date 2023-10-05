@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::string::String;
 
 use reqwest::StatusCode;
 use select::document::Document;
@@ -130,29 +131,24 @@ enum Commands {
 }
 
 
-async fn process_cli(cli: &Cli) {
-    // You can check the value provided by positional arguments, or option arguments
-    cli_command(cli).await;
-}
-
-
 async fn cli_command(cli: &Cli) {
-    match cli.target.as_ref() {
-        Some(url) => {
-            match cli.command {
-                Some(Commands::Links {list, check}) => {
-                    let links = extract_links_from_url(url.as_str()).await;
+    match &cli.target {
+        Some(check_target) => {
+            let url = String::from(check_target);
+                match cli.command {
+                    Some(Commands::Links {list, check}) => {
+                        let links = extract_links_from_url(url.as_str()).await;
 
-                    if check {
-                        check_links(links).await;
-                    } else if list {
-                        for link in links {
-                            println!("{}", link);
+                        if check {
+                            check_links(links).await;
+                        } else if list {
+                            for link in links {
+                                println!("{}", link);
+                            }
                         }
-                    }
-                },
-                None => {}
-            }
+                    },
+                    None => {}
+                }
         },
         None => {}
     }
@@ -162,5 +158,5 @@ async fn cli_command(cli: &Cli) {
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-    process_cli(&cli).await;
+    cli_command(&cli).await;
 }
