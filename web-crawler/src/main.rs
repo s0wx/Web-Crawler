@@ -131,21 +131,26 @@ enum Commands {
 }
 
 
+async fn process_cli_command_links(url: &String, list: &bool, check: &bool) {
+    let links = extract_links_from_url(url.as_str()).await;
+
+    if *check {
+        check_links(links).await;
+    } else if *list {
+        for link in links {
+            println!("{}", link);
+        }
+    }
+}
+
+
 async fn cli_command(cli: &Cli) {
     match &cli.target {
         Some(check_target) => {
             let url = String::from(check_target);
                 match cli.command {
                     Some(Commands::Links {list, check}) => {
-                        let links = extract_links_from_url(url.as_str()).await;
-
-                        if check {
-                            check_links(links).await;
-                        } else if list {
-                            for link in links {
-                                println!("{}", link);
-                            }
-                        }
+                        process_cli_command_links(&url, &list, &check).await;
                     },
                     None => {}
                 }
